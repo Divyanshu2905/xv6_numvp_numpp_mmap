@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "uproc.h": "c",
+        "stat.h": "c",
+        "proc.h": "c"
+    }
+}

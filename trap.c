@@ -45,7 +45,29 @@ trap(struct trapframe *tf)
       exit();
     return;
   }
+  if (tf->trapno == T_PGFLT) {
+      uint va = rcr2(); // Faulting virtual address
+      struct proc *p = myproc();
 
+      // Check if the faulting address is within the memory-mapped region
+      if (va >= p->sz) {
+          cprintf("Page fault at invalid address 0x%x\n", va);
+          p->killed = 1; // Kill the process for invalid access
+          return;
+      }
+
+      // Allocate physical memory for the faulting page
+      va = PGROUNDDOWN(va); // Align to page boundary
+      if (allocuvm(p->pgdir, va, va + PGSIZE) == 0) {
+          cprintf("Failed to allocate memory for 0x%x\n", va);
+          p->killed = 1;
+          return;
+      }
+
+      // Update TLB and CR3
+      switchuvm(p);
+      return; // Avoid further trap processing
+  }
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){

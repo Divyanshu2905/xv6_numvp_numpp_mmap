@@ -7,6 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 
+int numpp_helper(struct proc*p);
 int
 sys_fork(void)
 {
@@ -89,3 +90,43 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_numvp(void)
+{
+    struct proc *p = myproc(); // Get the current process
+    uint sz = p->sz;          // Process size in bytes
+    int pages = sz / PGSIZE;  // Calculate the number of pages
+
+    // Include the stack guard page
+    if (sz % PGSIZE > 0) 
+        pages++;
+
+    return pages;
+}
+
+int sys_numpp(void)
+{
+  return numpp_helper(myproc());
+}
+
+int sys_mmap(void) {
+    int num_bytes;
+
+    // Retrieve the number of bytes from the argument
+    if (argint(0, &num_bytes) < 0 || num_bytes <= 0 || num_bytes % PGSIZE != 0) {
+        return 0; // Invalid input
+    }
+
+    struct proc *p = myproc();
+
+    // Calculate the starting virtual address for the new memory
+    uint old_sz = p->sz;
+    uint new_sz = old_sz + num_bytes;
+
+    // Increase the process's virtual address space
+    p->sz = new_sz;
+
+    // Return the starting virtual address of the newly mapped region
+    return old_sz;
+}
+

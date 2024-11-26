@@ -392,3 +392,17 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+int numpp_helper(struct proc*p) {
+    pde_t *pgdir = p->pgdir;    // Get process page directory
+    int pages = 0;
+
+    // Walk through the process's address space
+    for (uint va = 0; va < p->sz; va += PGSIZE) {
+        pte_t *pte = walkpgdir(pgdir, (void *)va, 0);
+        if (pte && (*pte & PTE_P)) { // Check if PTE is present
+            pages++;
+        }
+    }
+
+    return pages; // Return the count of physical pages
+}
